@@ -1,0 +1,37 @@
+name: Build TUS
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q TUS_ASSISTANT.zip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+      - run: gradle -p TUS_ASSISTANT/Android assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TUS-Android-APK
+          path: TUS_ASSISTANT/Android/app/build/outputs/apk/debug/*.apk
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: Expand-Archive TUS_ASSISTANT.zip -DestinationPath .
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install -r TUS_ASSISTANT/Windows/requirements.txt pyinstaller
+          pyinstaller --onefile --noconsole --name TUS_Agent --collect-submodules pyttsx3 TUS_ASSISTANT/Windows/src/main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TUS-Windows-EXE
+          path: dist/TUS_Agent.exe
